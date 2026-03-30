@@ -113,6 +113,33 @@ class CrawlerService:
                 return filepath
             return None
 
+    async def crawl_article_to_dict(self, article: ArticleMetadata) -> Optional[dict]:
+        """
+        Crawls a single article and returns its content as a clean dictionary (JSON-friendly).
+        No LLM/API token required.
+        """
+        async with AsyncWebCrawler() as crawler:
+            config = CrawlerRunConfig(
+                cache_mode=CacheMode.BYPASS,
+                word_count_threshold=200,
+                remove_overlay_elements=True
+            )
+            
+            result = await crawler.arun(url=article.url, config=config)
+            
+            if result.success:
+                content = result.markdown.raw_markdown if hasattr(result.markdown, 'raw_markdown') else result.markdown
+                
+                return {
+                    "title": article.title,
+                    "url": article.url,
+                    "date": article.timestamp,
+                    "source": article.source,
+                    "content": content,
+                    "crawled_at": datetime.now().isoformat()
+                }
+            return None
+
     async def run_daily_crawl(self):
         sources = [
             ("https://cafef.vn/thi-truong-chung-khoan.chn", "cafef"),

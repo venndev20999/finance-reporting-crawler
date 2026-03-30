@@ -66,6 +66,23 @@ async def list_latest_articles():
         ) for a in all_articles
     ]
 
+@app.get("/crawl/content-json", response_model=List[dict])
+async def get_content_json(limit: int = 5):
+    """
+    Crawls the latest articles and returns them as a JSON list (No LLM/Token needed).
+    Returns a cleaner result with title, url, source, and markdown content.
+    """
+    articles = await crawler_service.get_latest_articles("https://cafef.vn/thi-truong-chung-khoan.chn", "cafef")
+    
+    results = []
+    # We limit by default to 5 to avoid long times, but user can change it
+    for a in articles[:limit]:
+        content_dict = await crawler_service.crawl_article_to_dict(a)
+        if content_dict:
+            results.append(content_dict)
+            
+    return results
+
 @app.get("/reports", response_model=List[str])
 async def list_reports():
     """
